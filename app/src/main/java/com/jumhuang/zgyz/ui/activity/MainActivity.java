@@ -11,6 +11,7 @@ import android.widget.*;
 import com.jumhuang.zgyz.*;
 import com.jumhuang.zgyz.adapter.*;
 import com.jumhuang.zgyz.base.*;
+import java.lang.Process;
 import com.jumhuang.zgyz.entity.*;
 import com.jumhuang.zgyz.permission.*;
 import com.jumhuang.zgyz.permission.request.*;
@@ -22,13 +23,15 @@ import org.jsoup.select.*;
 
 import android.support.v7.widget.Toolbar;
 import com.jumhuang.zgyz.R;
+import java.io.*;
+import java.net.*;
 
 public class MainActivity extends BaseActivity 
 {
 	private RecyclerView recycler;
     private SwipeRefreshLayout swipeview;
     private MyAdapter adapter;
-	
+
 	private List<Article> list=new ArrayList<Article>();
 	private Handler hander;
     private Bundle bundle;
@@ -72,7 +75,7 @@ public class MainActivity extends BaseActivity
         recycler.setHasFixedSize(true);
         recycler.setLayoutManager(new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false));
 		recycler.setItemAnimator(new DefaultItemAnimator());
-		adapter=new MyAdapter(getApplicationContext(),list);
+		adapter = new MyAdapter(getApplicationContext(), list);
 		recycler.setAdapter(adapter);
 
         recycler.setOnScrollListener(new RecyclerView.OnScrollListener()
@@ -120,7 +123,20 @@ public class MainActivity extends BaseActivity
 
 	private void init()
 	{
-		Read();
+		try
+		{
+			InetAddress address = InetAddress.getByName("www.weibo.com");
+			if (!address.isReachable(3000))
+			{
+				Toast("网络错误！");
+				finish();
+			}
+			Read();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	private void Read()
@@ -140,7 +156,7 @@ public class MainActivity extends BaseActivity
             public void handleMessage(Message msg)
 			{
                 //RecyclerView列表进行UI数据更新
-                Article bean = new Article(msg.getData().getString("TITLE"),msg.getData().getString("DESCRIPTION"),"Test",0,msg.getData().getString("TIME"), msg.getData().getString("URL"));
+                Article bean = new Article(msg.getData().getString("TITLE"), msg.getData().getString("DESCRIPTION"), "Test", 0, msg.getData().getString("TIME"), msg.getData().getString("URL"));
                 list.add(bean);
                 adapter.notifyDataSetChanged();
                 super.handleMessage(msg);
@@ -148,7 +164,7 @@ public class MainActivity extends BaseActivity
         };
 		adapter.notifyDataSetChanged();
     }
-	
+
 	private List<Article> listData()
 	{
         list = new ArrayList<>();
@@ -169,13 +185,13 @@ public class MainActivity extends BaseActivity
 				String description=ele.select("p.nlc_info").text();
 				String url=ele.select("p.nlc_info").select("a").attr("abs:href");   //abs:表示绝对路径，也就是包括网址的完整路径
 				//Document doc2=Jsoup.connect(url).get();
-				String time=ele.select("p.nlc_time").text().substring(0,10);
+				String time=ele.select("p.nlc_time").text().substring(0, 10);
 
 				msg = Message.obtain();
 				bundle = new Bundle();
 				//往Bundle中存放数据
 				bundle.putString("TITLE", movieName);
-				bundle.putString("DESCRIPTION",description);
+				bundle.putString("DESCRIPTION", description);
 				bundle.putString("TIME", time);
 				bundle.putString("URL", url);
 				msg.setData(bundle);
